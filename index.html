@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=1.5">
+  <title>在线问诊 · 信任博弈实验 | 身份标签研究</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #f0f4f8;
+      font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: white;
+      border-radius: 32px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 90vh;
+      max-height: 800px;
+      position: relative;
+    }
+    .header {
+      background: #0a7cff;
+      color: white;
+      padding: 16px 20px;
+      font-weight: 600;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .header-icon {
+      background: white;
+      color: #0a7cff;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      background: #f9fafc;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
+    .message {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 20px;
+      line-height: 1.5;
+      font-size: 15px;
+      word-break: break-word;
+      animation: fadeIn 0.3s ease;
+      position: relative;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .doctor {
+      align-self: flex-start;
+      background: white;
+      border: 1px solid #e9ecf0;
+      border-bottom-left-radius: 8px;
+      color: #1e293b;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+    .user {
+      align-self: flex-end;
+      background: #0a7cff;
+      color: white;
+      border-bottom-right-radius: 8px;
+      background: linear-gradient(135deg, #1e88ff, #0a6cd6);
+    }
+    .system-message {
+      align-self: center;
+      background: #edf2f9;
+      color: #334155;
+      border-radius: 16px;
+      font-size: 13px;
+      padding: 8px 16px;
+      max-width: 90%;
+      text-align: center;
+      background: #eef2f6;
+      font-weight: 500;
+    }
+    .options-panel {
+      background: white;
+      border-top: 1px solid #e2e8f0;
+      padding: 12px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+    }
+    .user-option {
+      background: #f1f5f9;
+      border: 1px solid #d9e2ef;
+      padding: 10px 18px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1e293b;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .user-option:hover {
+      background: #e6f0ff;
+      border-color: #0a7cff;
+      color: #0a7cff;
+    }
+    .btn {
+      background: #0a7cff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 4px 12px rgba(10,124,255,0.3);
+      width: fit-content;
+      align-self: center;
+      margin: 8px;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .invest-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 12px;
+    }
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    input[type=range] {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      background: #dce3ec;
+      border-radius: 5px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      background: #0a7cff;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+    .invest-value {
+      font-weight: 700;
+      min-width: 55px;
+      text-align: center;
+      background: #eef5ff;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+    .stage-indicator {
+      background: #fef9e7;
+      color: #92400e;
+      padding: 10px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin: 4px 0;
+    }
+    .timer {
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+<div class="container" id="appContainer">
+  <div class="header">
+    <div class="header-icon">🏥</div>
+    <div>在线问诊 · 消化内科</div>
+    <span style="margin-left: auto; font-size:13px; opacity:0.9;" id="groupTag"></span>
+  </div>
+  <div class="chat-area" id="chatArea"></div>
+  <div class="options-panel" id="actionPanel"></div>
+</div>
+
+<script>
+  (function() {
+    // ----- 随机分组 (A:AI共情, B:真人共情, C:AI无共情, D:真人无共情) -----
+    const groups = ['A', 'B', 'C', 'D'];
+    const randomGroup = groups[Math.floor(Math.random() * groups.length)];
+    const isAI = (randomGroup === 'A' || randomGroup === 'C');
+    const hasEmpathy = (randomGroup === 'A' || randomGroup === 'B');
+    
+    const doctorRole = isAI ? 'AI医生' : '真人医生';
+    const empathyNote = hasEmpathy ? '共情沟通风格' : '标准问诊风格';
+    
+    document.getElementById('groupTag').innerText = `组别:${randomGroup}`;
+    
+    // 全局状态
+    const state = {
+      group: randomGroup,
+      phase: 'intro', // intro, consultation, trustGame, end
+      chatRound: 0,
+      consultationMessages: [],
+      trustRound: 0,
+      totalTrustRounds: 20,
+      currentInvestorLabel: '真人', // 将在信任阶段动态变化 (投资人视角)
+      currentTrusteeLabel: '真人',   // 医生/代理人标签
+      investmentHistory: [],
+      reactionTimes: [],
+      startTime: null,
+      consultationComplete: false,
+    };
+    
+    // 数据记录
+    const dataLog = {
+      group: randomGroup,
+      doctorType: doctorRole,
+      empathy: hasEmpathy,
+      consultationChoices: [],
+      trustGameRounds: [],
+      investmentRatios: [],
+      reactionTimesMs: [],
+    };
+    
+    const chatArea = document.getElementById('chatArea');
+    const actionPanel = document.getElementById('actionPanel');
+    
+    // 辅助函数
+    function scrollToBottom() {
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+    
+    function addMessage(text, sender, type = 'text') {
+      const div = document.createElement('div');
+      div.className = `message ${sender}`;
+      if (sender === 'system') div.className = 'message system-message';
+      div.innerText = text;
+      chatArea.appendChild(div);
+      scrollToBottom();
+    }
+    
+    function clearActionPanel() {
+      actionPanel.innerHTML = '';
+    }
+    
+    function setActionButtons(options) {
+      clearActionPanel();
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'user-option';
+        btn.innerText = opt.text;
+        btn.onclick = () => {
+          if (opt.callback) opt.callback();
+        };
+        actionPanel.appendChild(btn);
+      });
+    }
+    
+    function recordReactionTime() {
+      if (state.startTime) {
+        const rt = Date.now() - state.startTime;
+        dataLog.reactionTimesMs.push(rt);
+        state.reactionTimes.push(rt);
+        state.startTime = null;
+      }
+    }
+    
+    // ----- 对话脚本 (共情/无共情) -----
+    function generateConsultationScript() {
+      const base = [
+        { sender:'doctor', text:'您好，我是今天的接诊医生。请详细描述一下您的症状。' },
+        { sender:'user', text:'我最近几天一直腹痛、腹泻，每天上五六次厕所，大便像水一样。还有点发烧，37.8度，全身没力气。' },
+      ];
+      
+      if (hasEmpathy) {
+        base.push({ sender:'doctor', text:'听到这些情况，我能理解您现在的担心和不适。反复腹泻确实很消耗体力，发烧也会让人非常疲惫。我们一步一步来分析。' });
+        base.push({ sender:'user', text:'是的，我已经两天没上班了，吃了蒙脱石散也没见好。' });
+        base.push({ sender:'doctor', text:'您自己尝试处理已经很主动了。不过效果不明显确实会让人焦虑。我再了解几个细节：腹痛具体在哪个位置？是持续疼还是阵发性的？' });
+        base.push({ sender:'user', text:'肚脐周围疼，一阵一阵的，拉完会好一点。' });
+        base.push({ sender:'doctor', text:'感谢您告诉我这些，这对判断很重要。最近有没有吃特别油腻或不干净的东西？有没有恶心呕吐？' });
+        base.push({ sender:'user', text:'前两天吃了隔夜的凉菜，没有吐，就是有点恶心。' });
+        base.push({ sender:'doctor', text:'明白了。您目前的情况需要警惕肠道感染或炎症。我建议做一个血常规和大便常规检查。别太紧张，多数情况通过补液和合理用药能缓解。' });
+        base.push({ sender:'user', text:'好的，那我现在该怎么办？需要住院吗？' });
+        base.push({ sender:'doctor', text:'先别着急，不一定需要住院。但需要尽快检查。您先注意补充水分，可以喝口服补液盐。我会为您开具检查单。' });
+      } else {
+        base.push({ sender:'doctor', text:'了解。请补充：腹痛具体部位？持续还是阵发？有无恶心呕吐？' });
+        base.push({ sender:'user', text:'肚脐周围一阵一阵疼，拉完好转。有点恶心，没吐。前两天吃了隔夜凉菜。' });
+        base.push({ sender:'doctor', text:'根据描述，考虑急性肠炎可能。建议查血常规、大便常规。' });
+        base.push({ sender:'user', text:'需要住院吗？我现在怎么办？' });
+        base.push({ sender:'doctor', text:'暂不需住院。先口服补液，避免脱水。检查后确定用药。' });
+      }
+      
+      // 额外填充至10-15轮对话 (这里保证至少10轮)
+      while (base.length < 12) {
+        if (hasEmpathy) {
+          base.push({ sender:'doctor', text:'您还有其他不舒服吗？我们可以慢慢梳理。' });
+          base.push({ sender:'user', text:'就是没力气，心里有点害怕。' });
+          base.push({ sender:'doctor', text:'害怕是正常的，我会全程跟进您的情况。' });
+        } else {
+          base.push({ sender:'doctor', text:'还有无其他症状？' });
+          base.push({ sender:'user', text:'就是没力气。' });
+          base.push({ sender:'doctor', text:'收到。继续观察。' });
+        }
+      }
+      return base.slice(0, 15);
+    }
+    
+    const consultationScript = generateConsultationScript();
+    
+    // ----- 信任博弈指导语 -----
+    function showTrustInstructions() {
+      addMessage('📋 接下来您将与刚才的医生进行一个投资相关的行为实验。', 'system');
+      addMessage('您将扮演【投资人】, 医生扮演【代理人】。您将获得20元初始资金，决定投资多少给医生。投资金额会变为3倍交给医生，然后医生决定返还多少给您。', 'system');
+      addMessage('实验共20轮。请根据您的判断做出投资决定。您的收益将影响最终报酬。', 'system');
+    }
+    
+    // ----- 信任博弈逻辑 (医生反应控制在适中范围) -----
+    function getDoctorReturn(investment) {
+      const triple = investment * 3;
+      // 返还比例控制在40%~55%之间，保持中性，不引发强烈信任/不信任
+      let ratio = 0.45 + Math.random() * 0.15; 
+      let rawReturn = Math.floor(triple * ratio);
+      rawReturn = Math.max(0, Math.min(triple, rawReturn));
+      return rawReturn;
+    }
+    
+    function startTrustRound() {
+      if (state.trustRound >= state.totalTrustRounds) {
+        endExperiment();
+        return;
+      }
+      
+      state.trustRound++;
+      const round = state.trustRound;
+      
+      // 投资人标签变化：按照论文设计，投资人标签在被试内操纵。这里简化：前10轮真人，后10轮AI (或反之？为了体现变化，我们采用交替设计：偶数轮AI标签，奇数轮真人标签？但论文为区块设计。这里采用分阶段：前10轮真人标签，后10轮AI标签)
+      if (round <= 10) {
+        state.currentInvestorLabel = '真人';
+      } else {
+        state.currentInvestorLabel = 'AI';
+      }
+      // 医生(代理人)标签根据分组固定：A/C为AI医生，B/D为真人医生
+      state.currentTrusteeLabel = isAI ? 'AI' : '真人';
+      
+      clearActionPanel();
+      addMessage(`第 ${round}/${state.totalTrustRounds} 轮投资`, 'system');
+      addMessage(`您的身份：${state.currentInvestorLabel} | 医生身份：${state.currentTrusteeLabel}医生`, 'system');
+      
+      const panelDiv = document.createElement('div');
+      panelDiv.className = 'invest-panel';
+      panelDiv.innerHTML = `
+        <div class="slider-container">
+          <span>投资金额(0-20元)</span>
+          <input type="range" id="investSlider" min="0" max="20" value="10" step="1">
+          <span class="invest-value" id="investValue">10 元</span>
+        </div>
+        <button class="btn" id="confirmInvestBtn">确认投资</button>
+        <div class="timer" id="roundTimer"></div>
+      `;
+      actionPanel.appendChild(panelDiv);
+      
+      const slider = document.getElementById('investSlider');
+      const valueDisplay = document.getElementById('investValue');
+      slider.addEventListener('input', (e) => {
+        valueDisplay.innerText = e.target.value + ' 元';
+      });
+      
+      state.startTime = Date.now();
+      
+      document.getElementById('confirmInvestBtn').onclick = () => {
+        recordReactionTime();
+        const investment = parseInt(slider.value, 10);
+        const triple = investment * 3;
+        const doctorReturn = getDoctorReturn(investment);
+        
+        const investorFinal = 20 - investment + doctorReturn;
+        const doctorFinal = triple - doctorReturn;
+        
+        dataLog.trustGameRounds.push({
+          round,
+          investorLabel: state.currentInvestorLabel,
+          trusteeLabel: state.currentTrusteeLabel,
+          investment,
+          tripleAmount: triple,
+          doctorReturn,
+          investorFinal,
+          doctorFinal,
+        });
+        dataLog.investmentRatios.push(investment / 20);
+        
+        addMessage(`您投资了 ${investment} 元`, 'user');
+        addMessage(`医生收到 ${triple} 元，返还给您 ${doctorReturn} 元`, 'doctor');
+        addMessage(`您最终获得 ${investorFinal} 元，医生获得 ${doctorFinal} 元`, 'system');
+        
+        clearActionPanel();
+        if (state.trustRound < state.totalTrustRounds) {
+          setActionButtons([{ text: '继续下一轮', callback: startTrustRound }]);
+        } else {
+          setActionButtons([{ text: '完成实验，查看结果', callback: endExperiment }]);
+        }
+      };
+    }
+    
+    function endExperiment() {
+      state.phase = 'end';
+      clearActionPanel();
+      addMessage('所有实验环节已完成。感谢您的参与！', 'system');
+      addMessage('正在生成数据文件...', 'system');
+      
+      // 构建CSV
+      const headers = ['group','doctorType','empathy','phase','round','investorLabel','trusteeLabel','investment','ratio','doctorReturn','reactionTime_ms'];
+      const rows = [];
+      
+      dataLog.trustGameRounds.forEach((r, idx) => {
+        rows.push([
+          dataLog.group,
+          dataLog.doctorType,
+          dataLog.empathy,
+          'trust',
+          r.round,
+          r.investorLabel,
+          r.trusteeLabel,
+          r.investment,
+          (r.investment/20).toFixed(3),
+          r.doctorReturn,
+          dataLog.reactionTimesMs[idx] || ''
+        ].join(','));
+      });
+      
+      const csvContent = headers.join(',') + '\n' + rows.join('\n');
+      const blob = new Blob(['\uFEFF' + csvContent], {type: 'text/csv;charset=utf-8;'});
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = `trust_game_data_${randomGroup}_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      addMessage('数据已下载。您可以关闭页面。', 'system');
+    }
+    
+    // ----- 问诊对话流程 -----
+    function runConsultation() {
+      state.phase = 'consultation';
+      let index = 0;
+      
+      function nextMessage() {
+        if (index >= consultationScript.length) {
+          // 问诊结束
+          state.consultationComplete = true;
+          addMessage('问诊结束。接下来进入行为实验部分。', 'system');
+          setActionButtons([{ text: '进入信任博弈实验', callback: () => {
+            showTrustInstructions();
+            setActionButtons([{ text: '开始投资实验', callback: startTrustRound }]);
+          }}]);
+          return;
+        }
+        
+        const msg = consultationScript[index];
+        if (msg.sender === 'doctor') {
+          addMessage(msg.text, 'doctor');
+          index++;
+          setTimeout(nextMessage, 600);
+        } else if (msg.sender === 'user') {
+          // 用户固定回答，但需要点击发送
+          setActionButtons([{
+            text: msg.text,
+            callback: () => {
+              state.startTime = Date.now();
+              addMessage(msg.text, 'user');
+              recordReactionTime();
+              dataLog.consultationChoices.push({ round: index, choice: msg.text });
+              index++;
+              clearActionPanel();
+              setTimeout(nextMessage, 400);
+            }
+          }]);
+        }
+      }
+      
+      nextMessage();
+    }
+    
+    // ----- 初始介绍 -----
+    function showIntro() {
+      state.phase = 'intro';
+      addMessage('请想象您最近几天持续腹痛、腹泻，每天上厕所5–6次，大便呈稀水样。伴有轻微发热（37.8℃），感觉全身乏力，已经两天没上班了。您自己买了些蒙脱石散服用，但效果不明显。由于担心病情加重，您决定通过某三甲医院的在线问诊平台咨询一位医生。', 'system');
+      
+      const introText = `接下来由${doctorRole}为您服务（${empathyNote}）。`;
+      addMessage(introText, 'system');
+      
+      setActionButtons([{ text: '开始问诊', callback: () => {
+        clearActionPanel();
+        runConsultation();
+      }}]);
+    }
+    
+    // 启动
+    showIntro();
+    
+  })();
+</script>
+</body>
+</html>
